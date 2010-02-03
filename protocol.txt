@@ -1,0 +1,25 @@
+Data Exchange Protocol
+|MT|MN|TM|... (TSD) ...|ES|
+MT = Message Type {File, Edit, Alert}
+MN = Message Number {N}
+TM = Total Messages in Sequence {S >= N}
+TSD = Type Specific Data {Depends on Message Type*}
+ES = End Signature {0x00}
+
+*Extensions
+_File Extensions_
+|FN|FD|
+FD = File Data
+
+_Edit Extensions_
+|FN|EL|ET|
+FN = File name
+EL = Edit Location
+ET = Edit
+
+_Alert Extension_
+|AT|AD|
+AT = Alert Type {Open, Close, Intent to Edit, Save, Delete, ...}
+AD = Additional Data
+
+# We still need to work out length, charset, etc.
