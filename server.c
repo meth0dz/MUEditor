@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -19,9 +18,14 @@
 
 bool server_init(void);
 bool server_create(void);
+#ifdef _WIN32
 void server_get_connections(SOCKET serv_socket);
+#else
+void server_get_connections(int serv_socket);
+#endif
 void server_cleanup(void);
 void server_handle_clients(void* client_index);
+
 SOCKET * client_sockets;
 struct sockaddr * client_addrs;
 
@@ -39,7 +43,6 @@ int main(int argc, char ** argv)
 		return 1;
 }
 
-// It will be debatable whether we won't to create the server socket in this function or wait until later
 bool server_init(void)
 {
 	#ifdef _WIN32 
@@ -53,34 +56,26 @@ bool server_init(void)
 
 bool server_create(void)
 {
-	
+	struct sockaddr_in serv_addr;
+	memset((void*)&serv_addr, 0, sizeof(struct sockaddr_in));
 	#ifdef _WIN32
 		SOCKET server_socket;
+		if ((server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != INVALID_SOCKET) {
+			serv_addr.sin_port = htons(1001);
 	#else
 		int server_socket;
 		pthread_t threadid;
-	#endif
-		struct sockaddr_in serv_addr;
-	#ifdef _WIN21
-		if ((server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != INVALID_SOCKET) {
-			serv_addr.sin_addr.s_addr = INADDR_ANY;
-	#else
 		if ((server_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1) {
-			serv_addr.sin_addr.s_addr = INADDR_ANY;
-	#endif
-			memset((void*)&serv_addr, 0, sizeof(struct sockaddr_in));
-			serv_addr.sin_family = AF_INET;
-			#ifdef _WIN32
-			serv_addr.sin_port = htons(1001);
-			#else
 			serv_addr.sin_port = (short)1001;
-			#endif
+	#endif
+			serv_addr.sin_addr.s_addr = INADDR_ANY;
+			serv_addr.sin_family = AF_INET;
 			if (!bind(server_socket, (struct sockaddr*)&serv_addr, sizeof(struct sockaddr_in))) {
 				if (!listen(server_socket, MAX_QUE)) {
 	#if _WIN32
 					CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&server_get_connections, (void*)server_socket, 0, 0);
 	#else
-					pthread_create(&threadid ,NULL, &server_get_connections, (void*)server_socket);
+					pthread_create(&threadid, NULL, &server_get_connections, (void*)server_socket);
 	#endif
 					return true;
 				}
@@ -88,10 +83,12 @@ bool server_create(void)
 		}
 		return false;
 }
-
+#ifdef _WIN32
 void server_get_connections(SOCKET serv_socket)
+#else
+void server_get_connections(int serv_socket)
+#endif
 {
-		struct sockaddr client_addr;
 		int client_index;
 	#if !defined(_WIN32)
 		pthread_t threadid;
@@ -113,10 +110,11 @@ void server_get_connections(SOCKET serv_socket)
 					}
 					if (client_index != MAX_CLIENTS) {
 	#ifdef _WIN32
-						if ((client_sockets[client_index] = accept(serv_socket, &client_addr, NULL)) != INVALID_SOCKET) 
+						if ((client_sockets[client_index] = accept(serv_socket, &(client_addrs[client_index]), NULL)) != INVALID_SOCKET) {
 							CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&server_handle_clients, (void*)client_index, 0, 0);
+						}
 	#else
-						if ((client_sockets[client_index] = accept(serv_socket, &client_addr, NULL)) != -1)
+						if ((client_sockets[client_index] = accept(serv_socket, &(client_addrs[client_index]), NULL)) != -1)
 							pthread_create(&threadid, NULL, &server_handle_clients, (void*)client_index);
 	#endif
 					}
