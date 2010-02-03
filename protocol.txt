@@ -1,8 +1,9 @@
 Data Exchange Protocol
-|MT|MN|TM|... (TSD) ...|ES|
+|MT|MN|TM|MA|... (TSD) ...|ES|
 MT = Message Type {File, Edit, Alert}
 MN = Message Number {N}
 TM = Total Messages in Sequence {S >= N}
+MA = Message Author
 TSD = Type Specific Data {Depends on Message Type*}
 ES = End Signature {0x00}
 

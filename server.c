@@ -146,15 +146,15 @@ void server_handle_clients(void* client_index)
 
 void server_cleanup(void)
 {
-		#ifdef _WIN32
+	#ifdef _WIN32
 		for (int i = 0; i < MAX_CLIENTS; i++) 
 			if (client_sockets[i] != INVALID_SOCKET) closesocket(client_sockets[i]);
 		WSACleanup();
-		#else
+	#else
 		int i;
 		for (i = 0; i < MAX_CLIENTS; i++)
 			if (client_sockets[i] != -1) close(client_sockets[i]);
-		#endif
+	#endif
 		if (client_addrs)
 			free (client_addrs);
 		if (client_sockets)
