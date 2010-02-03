@@ -7,12 +7,12 @@
 
 #define MAX_CLIENTS 10
 
-bool init_server(void);
-bool create_server(void);
-void handle_clients_server(void* client_index);
-void get_connections_server(SOCKET serv_socket);
+bool server_init(void);
+bool server_create(void);
+void server_get_connections(SOCKET serv_socket);
+void server_cleanup(void);
+void server_handle_clients(void* client_index);
 int get_first_available(SOCKET* list, int list_length);
-void cleanup_server(void);
 
 SOCKET * client_sockets;
 struct sockaddr * client_addrs;
@@ -20,19 +20,19 @@ struct sockaddr * client_addrs;
 int main(int argc, char ** argv)
 {
 	SOCKET serv_socket;
-	if (init_server()) {
-		if (create_server()) {
+	if (server_init()) {
+		if (server_create()) {
 			printf("Server is running.\n");
 			while (1);
 			return 0;
 		}
-		cleanup_server();
+		server_cleanup();
 	}
 	return 1;
 }
 
 // It will be debatable whether we won't to create the server socket in this function or wait until later
-bool init_server(void)
+bool server_init(void)
 {
 	#ifdef _WIN32 
 	WSADATA wdata;
@@ -43,7 +43,7 @@ bool init_server(void)
 	#endif
 }
 
-bool create_server(void)
+bool server_create(void)
 {
 	#ifdef _WIN32
 	SOCKET server_socket;
@@ -56,7 +56,7 @@ bool create_server(void)
 		serv_addr.sin_port = htons(1001);
 		if (!bind(server_socket, (struct sockaddr*)&serv_addr, sizeof(struct sockaddr_in))) {
 			if (!listen(server_socket, 5)) {
-				CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&get_connections_server, (void*)server_socket, 0, 0);
+				CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&server_get_connections, (void*)server_socket, 0, 0);
 				return true;
 			}
 		}
@@ -65,7 +65,7 @@ bool create_server(void)
 	return false;
 }
 
-void get_connections_server(SOCKET serv_socket)
+void server_get_connections(SOCKET serv_socket)
 {
 	#ifdef _WIN32
 	struct sockaddr client_addr;
@@ -74,9 +74,11 @@ void get_connections_server(SOCKET serv_socket)
 		memset(client_sockets, INVALID_SOCKET, sizeof(SOCKET) * MAX_CLIENTS);
 		if (client_addrs = calloc(MAX_CLIENTS, sizeof(struct sockaddr))) {
 			while (true) {
-				client_index = get_first_available(client_sockets, MAX_CLIENTS);
-				if ((client_sockets[client_index] = accept(serv_socket, &client_addr, NULL)) != INVALID_SOCKET) {
-					CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&handle_clients_server, (void*)client_index, 0, 0);
+				for (client_index = 0; client_index < MAX_CLIENTS; client_index++)
+					if (client_sockets[client_index] == INVALID_SOCKET) break;
+				if (client_index != MAX_CLIENTS) {
+					if ((client_sockets[client_index] = accept(serv_socket, &client_addr, NULL)) != INVALID_SOCKET) 
+						CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&server_handle_clients, (void*)client_index, 0, 0);
 				}
 				Sleep (100);
 			}
@@ -88,10 +90,20 @@ void get_connections_server(SOCKET serv_socket)
 	return;
 }
 
-void handle_clients_server(void* client_index)
+void server_handle_clients(void* client_index)
 {
 	printf("Client #: %d\n", client_index);
 	client_sockets[(int)client_index] = 0;
+	return;
+}
+
+void server_cleanup(void)
+{
+	WSACleanup();
+	if (client_addrs)
+		free (client_addrs);
+	if (client_sockets)
+	free (client_sockets);
 	return;
 }
 
@@ -101,8 +113,3 @@ int get_first_available(SOCKET* list, int list_length)
 		if (list[i] == INVALID_SOCKET) return i;
 }
 
-void cleanup_server(void)
-{
-	WSACleanup();
-	return;
-}
