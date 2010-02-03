@@ -60,13 +60,13 @@ bool connect_client(char* ip, long port)
 		if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1) {
 			inet_aton(ip, &(serv_addr.sin_addr));
 	#endif
-			#ifdef _WIN32
+	#ifdef _WIN32
 			serv_addr.sin_family = AF_INET;
 			serv_addr.sin_port = htons(port);
-			#else
+	#else
 			serv_addr.sin_family = PF_INET;
 			serv_addr.sin_port = port;
-			#endif
+	#endif
 			if (!connect(client_socket, (struct sockaddr*)&serv_addr, sizeof(struct sockaddr_in)))
 				return true;
 		}
