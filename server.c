@@ -17,12 +17,6 @@
 #define MAX_CLIENTS 10
 #define MAX_QUE		5
 
-#ifndef _WIN32
-#define SOCKET int
-#endif
-
-#define DEBUG
-
 bool server_init(void);
 bool server_create(void);
 void server_get_connections(SOCKET serv_socket);
@@ -59,11 +53,12 @@ bool server_init(void)
 
 bool server_create(void)
 {
-	pthread_t threadid;
+	
 	#ifdef _WIN32
 		SOCKET server_socket;
 	#else
 		int server_socket;
+		pthread_t threadid;
 	#endif
 		struct sockaddr_in serv_addr;
 	#ifdef _WIN21
@@ -98,13 +93,14 @@ void server_get_connections(SOCKET serv_socket)
 {
 		struct sockaddr client_addr;
 		int client_index;
+	#if !defined(_WIN32)
 		pthread_t threadid;
-	if (client_sockets = calloc(MAX_CLIENTS, sizeof(SOCKET))) {
+	#endif
+		if (client_sockets = calloc(MAX_CLIENTS, sizeof(SOCKET))) {
 	#ifdef _WIN32
 			memset(client_sockets, INVALID_SOCKET, sizeof(SOCKET) * MAX_CLIENTS);
 	#else
 			memset(client_sockets, -1, sizeof(SOCKET) * MAX_CLIENTS);
-			printf("hey\n");
 	#endif
 			if (client_addrs = calloc(MAX_CLIENTS, sizeof(struct sockaddr))) {
 				while (true) {
@@ -124,7 +120,7 @@ void server_get_connections(SOCKET serv_socket)
 							pthread_create(&threadid, NULL, &server_handle_clients, (void*)client_index);
 	#endif
 					}
-	#ifdef _WIN21
+	#ifdef _WIN32
 					Sleep (100);
 	#else
 					usleep(100000);

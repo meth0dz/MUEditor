@@ -50,20 +50,14 @@ bool connect_client(char* ip, long port)
 		memset(&serv_addr, 0, sizeof(struct sockaddr_in));
 	#if _WIN32
 		SOCKET client_socket;
-	#else 
-		int client_socket;
-	#endif
-	#if _WIN32
 		if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != INVALID_SOCKET) {
 			serv_addr.sin_addr.s_addr = inet_addr(ip);
-	#else
-		if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1) {
-			inet_aton(ip, &(serv_addr.sin_addr));
-	#endif
-	#ifdef _WIN32
 			serv_addr.sin_family = AF_INET;
 			serv_addr.sin_port = htons(port);
-	#else
+	#else 
+		int client_socket;
+		if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1) {
+			inet_aton(ip, &(serv_addr.sin_addr));
 			serv_addr.sin_family = PF_INET;
 			serv_addr.sin_port = port;
 	#endif
