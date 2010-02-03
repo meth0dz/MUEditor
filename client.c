@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #ifdef __WIN32
 #include <windows.h>
@@ -16,7 +17,11 @@
 bool setup_client(void);
 bool connect_client(char* ip, long port);
 
+#ifdef __WIN32
 SOCKET client_socket;
+#else
+int client_socket;
+#endif
 
 int main(int argc, char** argv)
 {
@@ -42,6 +47,7 @@ bool setup_client(void)
 bool connect_client(char* ip, long port)
 {
 		struct sockaddr_in serv_addr;
+		memset(&serv_addr, 0, sizeof(struct sockaddr_in));
 	#if _WIN32
 		SOCKET client_socket;
 	#else 
@@ -54,9 +60,13 @@ bool connect_client(char* ip, long port)
 		if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1) {
 			inet_aton(ip, &(serv_addr.sin_addr));
 	#endif
-			memset(&serv_addr, 0, sizeof(struct sockaddr_in));
+			#ifdef _WIN32
 			serv_addr.sin_family = AF_INET;
 			serv_addr.sin_port = htons(port);
+			#else
+			serv_addr.sin_family = PF_INET;
+			serv_addr.sin_port = port;
+			#endif
 			if (!connect(client_socket, (struct sockaddr*)&serv_addr, sizeof(struct sockaddr_in)))
 				return true;
 		}
